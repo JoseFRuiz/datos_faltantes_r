@@ -1,0 +1,147 @@
+---
+title: "Manejo de Datos Faltantes y Atípicos en R"
+author: "Clase de R"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Install required packages if not already installed
+if (!require("naniar")) install.packages("naniar")
+if (!require("VIM")) install.packages("VIM")
+if (!require("dplyr")) install.packages("dplyr")
+if (!require("mice")) install.packages("mice")
+
+# Load required packages
+library(naniar)
+library(VIM)
+library(dplyr)
+library(mice)
+```
+
+## Objetivos de la clase
+
+- Identificar valores faltantes en un conjunto de datos.
+- Contar, visualizar y tratar los datos faltantes.
+- Aplicar estrategias como eliminación, imputación y análisis exploratorio.
+
+## 1. Detección de datos faltantes
+
+```{r}
+# Crear un conjunto de datos con valores faltantes
+datos <- data.frame(
+  nombre = c("Ana", "Luis", "Carlos", "Beatriz", NA),
+  edad = c(25, NA, 32, 28, 22),
+  puntaje = c(85, 90, NA, 88, 75)
+)
+
+# Ver el conjunto de datos
+print(datos)
+
+# Identificar valores NA
+is.na(datos)
+
+# Contar datos faltantes por columna
+colSums(is.na(datos))
+```
+
+## 2. Eliminar observaciones con NA
+
+```{r}
+# Eliminar filas con valores faltantes
+na.omit(datos)
+
+# Usar dplyr para filtrar filas completas
+library(dplyr)
+datos %>% filter(complete.cases(.))
+```
+
+## 3. Visualización de datos faltantes
+
+```{r, warning=FALSE, message=FALSE}
+# Visualizar patrón de valores faltantes
+vis_miss(datos)
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Gráfico de agregación de faltantes
+aggr(datos, col = c('skyblue', 'red'), numbers = TRUE, sortVars = TRUE)
+```
+
+## 4. Imputación de datos faltantes
+
+### Imputación simple (media)
+
+```{r}
+# Imputar edad con la media
+datos$edad[is.na(datos$edad)] <- mean(datos$edad, na.rm = TRUE)
+print(datos)
+```
+
+### Imputación múltiple con `mice`
+
+```{r, warning=FALSE, message=FALSE}
+# Generar imputaciones
+imp <- mice(datos, m = 5, method = "pmm", seed = 123)
+
+# Conjunto imputado (primera versión)
+datos_imputados <- complete(imp, 1)
+print(datos_imputados)
+```
+
+## 5. Actividad práctica
+
+Utilizar el dataset `airquality` incluido en R.
+
+```{r}
+data("airquality")
+
+# Explorar el conjunto de datos
+head(airquality)
+summary(airquality)
+colSums(is.na(airquality))
+
+# Visualizar con naniar
+vis_miss(airquality)
+
+```
+
+**Ejercicio:**
+
+1. Identificar columnas con valores faltantes.
+2. Visualizar el patrón de valores NA.
+3. Realizar cálculos estadísticos y visualizaciones eliminando los valores faltantes: 
+   a) Media, mediana, moda, desviación estándar, mínimo, máximo de las variables físicas (`Ozone`, `Solar.R`, `Wind`, `Temp`).
+   b) Boxplots de las variables físicas.
+   c) Histogramas de las variables físicas.
+   d) Calcular una nueva columna que corresponda al día juliano (1-365) para cada observación.
+   e) Gráfico de dispersión entre cada par de variables físicas y variable física - día juliano.
+   f) Correlaciones entre cada par de variables físicas y variable física - día juliano.
+
+4. Aplicar imputación de valores perdidos y realizar los mismos cálculos estadísticos y visualizaciones del punto 3.
+5. Comparar resultados antes y después de imputar.
+6. Para cada variable física:
+   a) Calcular la **media** y la **desviación estándar** excluyendo valores faltantes (`NA`).
+   b) Definir como **atípico** cualquier valor que esté fuera del rango:
+      $$
+      [\mu - 2\sigma, \mu + 2\sigma]
+      $$
+     donde:
+      * $\mu$ es la media de la variable,
+      * $\sigma$ es la desviación estándar de la variable.
+   c) Crear una nueva columna para cada variable que indique si el valor es atípico (`TRUE` o `FALSE`).
+   d) Mostrar una tabla resumen con:
+      * El número total de observaciones.
+      * El número de valores atípicos detectados por variable.
+      * El porcentaje de valores atípicos respecto al total.
+   e) Visualizar los valores atípicos en un **gráfico de dispersión** o **boxplot**, resaltándolos en color diferente.
+
+
+
+
+
+
+
+
+
